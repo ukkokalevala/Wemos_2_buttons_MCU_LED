@@ -1,0 +1,50 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include "secrets.h" // Include the secrets header file
+
+//const char* ssid = "your_SSID";
+//const char* password = "your_password";
+
+
+ESP8266WebServer server(80);
+
+const int ledPin = D2;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, LOW);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+  
+  // Print the IP address
+  Serial.print("NodeMCU IP address: ");
+  Serial.println(WiFi.localIP());
+
+  server.on("/led", handleLED);
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop() {
+  server.handleClient();
+}
+
+void handleLED() {
+  String state = server.arg("state");
+  Serial.println("Received command: " + state);
+  if (state == "on") {
+    digitalWrite(ledPin, HIGH);
+    server.send(200, "text/plain", "LED is ON");
+  } else if (state == "off") {
+    digitalWrite(ledPin, LOW);
+    server.send(200, "text/plain", "LED is OFF");
+  } else {
+    server.send(400, "text/plain", "Invalid command");
+  }
+}
